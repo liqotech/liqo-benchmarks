@@ -13,3 +13,16 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~
+*.tgz
+.vscode
+.devcontainer
+.DS_Store
+
+# The results of the benchmarks
+results

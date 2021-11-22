@@ -1,0 +1,106 @@
+{{- $config := (merge (dict "component" "configuration") .) -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "liqo-k3s-cattle.fullname" . }}
+  labels:
+    {{- include "liqo-k3s-cattle.labels" $config | nindent 4 }}
+data:
+  liqo-namespace.yaml: |-
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: {{ .Values.liqo.namespace }}
+
+  liqo-chart.yaml: |-
+    apiVersion: helm.cattle.io/v1
+    kind: HelmChart
+    metadata:
+      name: liqo
+      namespace: kube-system
+    spec:
+      repo: {{ .Values.liqo.repo }}
+      chart: {{ .Values.liqo.chart }}
+      version: {{ .Values.liqo.version }}
+      targetNamespace: {{ .Values.liqo.namespace }}
+      valuesContent: |
+        {{- .Values.liqo.values | nindent 8 }}
+
+  {{- if .Values.peeringMeasurer.peer }}
+  liqo-peering-measurer-namespace.yaml: |-
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: {{ .Values.peeringMeasurer.namespace }}
+
+  liqo-peering-measurer-service-account.yaml: |-
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: peering-measurer
+      namespace: {{ .Values.peeringMeasurer.namespace }}
+
+  liqo-peering-measurer-cluster-role-binding.yaml: |-
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: peering-measurer
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: cluster-admin
+    subjects:
+    - kind: ServiceAccount
+      name: peering-measurer
+      namespace: {{ .Values.peeringMeasurer.namespace }}
+
+  liqo-peering-measurer-job.yaml: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: peering-measurer
+      namespace: {{ .Values.peeringMeasurer.namespace }}
+      labels:
+        app.kubernetes.io/name: peering-measurer
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: peering-measurer
+        spec:
+          containers:
+          - image: {{ .Values.peeringMeasurer.image }}
+            imagePullPolicy: IfNotPresent
+            name: peering-measurer
+            args:
+            - --service-name={{ include "liqo-k3s-cattle.fullname" . }}-minion
+            - --expected={{ .Values.minion.replicaCount }}
+            - --extra-wait=30s
+            - --v=2
+          dnsPolicy: Default
+          restartPolicy: OnFailure
+          serviceAccountName: peering-measurer
+  {{- end }}
+
+  kubelet-config.yaml: |-
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    kind: KubeletConfiguration
+    maxPods: {{ .Values.settings.maxPods }}
+
+  registries.yaml: |-
+    mirrors:
+      docker.io:
+        endpoint:
+        - {{ quote .Values.settings.proxyRegistry }}
+
+  meminfo: |-
+    MemTotal: {{ mul .Values.settings.memTotalGB 1024 1024}} kB
+    SwapTotal: 0 kB
+
+  readiness-check: |-
+    #! /bin/sh
+    COMPLETE=$(kubectl get job --namespace kube-system helm-install-liqo \
+      --output jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+    [ "$COMPLETE" = True ]
+    exit $?

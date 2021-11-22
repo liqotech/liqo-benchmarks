@@ -1,0 +1,114 @@
+hub:
+  replicaCount: 1
+  image: rancher/k3s:v1.21.3-k3s1
+
+  resources:
+    limits:
+      cpu: 8000m
+      memory: 32768Mi
+    requests:
+      cpu: 8000m
+      memory: 32768Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - worker-1
+
+
+minion:
+  replicaCount: 1
+  image: rancher/k3s:v1.21.3-k3s1
+
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4096Mi
+    requests:
+      cpu: 1000m
+      memory: 2048Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: NotIn
+            values:
+            - worker-1
+
+
+peeringMeasurer:
+  peer: true
+  image: giorio94/liqo-peering-measurer:v0.3.4
+  namespace: peering-measurer
+
+
+settings:
+  proxyRegistry: http://docker-registry:5000
+  memTotalGB: 32
+  maxPods: 250
+
+
+liqo:
+  repo: ""
+  chart: https://crownlabs.polito.it/cloud/s/y7JRSXGF2JiZwxo/download
+  version: ""
+
+  namespace: liqo
+
+  values: |
+    tag: "a06cebd6125a6d8c643cb827c24253abb9f07cd9"
+
+    controllerManager:
+      config:
+        resourceSharingPercentage: 100
+      pod:
+        extraArgs:
+          - --v=4
+          - --kubelet-cpu-limits=250m
+          - --kubelet-cpu-requests=25m
+          - --kubelet-ram-limits=250M
+          - --kubelet-ram-requests=50M
+          - --foreign-cluster-workers=3
+
+    networkManager:
+      config:
+        podCIDR: "10.42.0.0/20"
+        serviceCIDR: "10.43.0.0/20"
+        reservedSubnets:
+        - 192.168.0.0/16
+        - 172.16.0.0/16
+        - 10.96.0.0/12
+      pod:
+        extraArgs:
+          - --v=4
+
+    gateway:
+      service:
+        type: NodePort
+
+    auth:
+      config:
+        enableAuthentication: false
+      service:
+        type: LoadBalancer
+      pod:
+        extraArgs:
+          - --v=4
+
+    discovery:
+      config:
+        enableAdvertisement: false
+        enableDiscovery: false
+
+    crdReplicator:
+      pod:
+        extraArgs:
+          - --v=4

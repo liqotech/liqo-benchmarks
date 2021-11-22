@@ -1,0 +1,18 @@
+{{- $config := (merge (dict "component" "minion") .) -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "liqo-k3s-cattle.fullname" . }}-minion
+  labels:
+    {{- include "liqo-k3s-cattle.labels" $config | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "liqo-k3s-cattle.selectorLabels" $config | nindent 4 }}
+  ports:
+    - name: auth
+      protocol: TCP
+      port: 443
+      targetPort: 443

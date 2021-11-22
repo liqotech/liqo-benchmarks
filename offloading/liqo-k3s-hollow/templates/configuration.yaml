@@ -1,0 +1,167 @@
+{{- $config := (merge (dict "component" "configuration") .) -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "liqo-k3s-hollow.fullname" . }}
+  labels:
+    {{- include "liqo-k3s-hollow.labels" $config | nindent 4 }}
+data:
+{{- if .Values.liqo.install }}
+  liqo-namespace.yaml: |-
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: {{ .Values.liqo.namespace }}
+
+  liqo-chart.yaml: |-
+    apiVersion: helm.cattle.io/v1
+    kind: HelmChart
+    metadata:
+      name: liqo
+      namespace: kube-system
+    spec:
+      repo: {{ .Values.liqo.repo }}
+      chart: {{ .Values.liqo.chart }}
+      version: {{ .Values.liqo.version }}
+      targetNamespace: {{ .Values.liqo.namespace }}
+      valuesContent: |
+        {{- .Values.liqo.values | nindent 8 }}
+
+  liqo-peerer-service-account.yaml: |-
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: peerer
+      namespace: kube-system
+
+  liqo-peerer-cluster-role-binding.yaml: |-
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: peerer
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: cluster-admin
+    subjects:
+    - kind: ServiceAccount
+      name: peerer
+      namespace: kube-system
+
+  liqo-peerer-job.yaml: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: peerer
+      namespace: kube-system
+      labels:
+        app.kubernetes.io/name: peerer
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: peerer
+        spec:
+          containers:
+          - image: {{ .Values.liqo.peer.image }}
+            imagePullPolicy: IfNotPresent
+            name: peering-measurer
+            args:
+{{- if .Values.liqo.peer.provider }}
+            {{- if .Values.liqo.peer.consumer }}{{ fail "provider and consumer cannot start a peering at the same time" }}{{ end }}
+            - --service-name={{ include "liqo-k3s-hollow.fullname" . }}-consumer
+{{- else }}
+            - --service-name={{ include "liqo-k3s-hollow.fullname" . }}-provider
+{{- end }}
+            - --v=2
+          dnsPolicy: Default
+          restartPolicy: OnFailure
+          serviceAccountName: peerer
+{{- end }}
+{{- if .Values.admiralty.install }}
+  cert-manager-namespace.yaml: |-
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: {{ .Values.admiralty.certmanager.namespace }}
+
+  admiralty-namespace.yaml: |-
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: {{ .Values.admiralty.namespace }}
+
+  cert-manager-chart.yaml: |-
+    apiVersion: helm.cattle.io/v1
+    kind: HelmChart
+    metadata:
+      name: cert-manager
+      namespace: kube-system
+    spec:
+      chart: {{ .Values.admiralty.certmanager.chart }}
+      repo: {{ .Values.admiralty.certmanager.repo }}
+      version: {{ .Values.admiralty.certmanager.version }}
+      targetNamespace: {{ .Values.admiralty.certmanager.namespace }}
+      set:
+        installCRDs: "true"
+
+  admiralty-chart.yaml: |-
+    apiVersion: helm.cattle.io/v1
+    kind: HelmChart
+    metadata:
+      name: admiralty
+      namespace: kube-system
+    spec:
+      chart: {{ .Values.admiralty.chart }}
+      repo: {{ .Values.admiralty.repo }}
+      version: {{ .Values.admiralty.version }}
+      targetNamespace: {{ .Values.admiralty.namespace }}
+{{- end }}
+{{- if .Values.tensile.install }}
+  cert-manager-namespace.yaml: |-
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: {{ .Values.tensile.certmanager.namespace }}
+
+  cert-manager-chart.yaml: |-
+    apiVersion: helm.cattle.io/v1
+    kind: HelmChart
+    metadata:
+      name: cert-manager
+      namespace: kube-system
+    spec:
+      chart: {{ .Values.tensile.certmanager.chart }}
+      repo: {{ .Values.tensile.certmanager.repo }}
+      version: {{ .Values.tensile.certmanager.version }}
+      targetNamespace: {{ .Values.tensile.certmanager.namespace }}
+      set:
+        installCRDs: "true"
+{{- end }}
+
+  registries.yaml: |-
+    mirrors:
+      docker.io:
+        endpoint:
+        - {{ quote .Values.settings.proxyRegistry }}
+
+  meminfo: |-
+    MemTotal: {{ mul .Values.settings.memTotalGB 1024 1024}} kB
+    SwapTotal: 0 kB
+
+  readiness-check: |-
+    #! /bin/sh
+{{- if or (or .Values.liqo.install .Values.admiralty.install) .Values.tensile.install }}
+{{- if .Values.liqo.install }}
+    JOB=helm-install-liqo
+{{- else if .Values.admiralty.install }}
+    JOB=helm-install-admiralty
+{{- else if .Values.tensile.install }}
+    JOB=helm-install-cert-manager
+{{- end }}
+    COMPLETE=$(kubectl get job --namespace kube-system $JOB \
+      --output jsonpath='{.status.conditions[?(@.type=="Complete")].status}')
+    [ "$COMPLETE" = True ]
+{{- end }}
+    exit $?

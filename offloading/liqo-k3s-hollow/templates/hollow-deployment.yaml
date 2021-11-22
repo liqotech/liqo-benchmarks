@@ -1,0 +1,92 @@
+{{- $config := (merge (dict "component" "hollow") .) -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "liqo-k3s-hollow.fullname" . }}-hollow
+  labels:
+    {{- include "liqo-k3s-hollow.labels" $config | nindent 4 }}
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.hollow.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "liqo-k3s-hollow.selectorLabels" $config | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "liqo-k3s-hollow.selectorLabels" $config | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: kubelet
+        image: {{ .Values.hollow.version }}
+        command:
+        - /kubemark
+        args:
+        - --morph=kubelet
+        - --name=$(NODE_NAME)
+        - --kubeconfig=/tmp/kubeconfig
+        - --logtostderr=true
+        - --node-labels=node-role.kubernetes.io/hollow=true
+        - --register-with-taints=node-role.kubernetes.io/hollow:NoSchedule
+        securityContext:
+          privileged: true
+        resources:
+          {{- toYaml .Values.hollow.kubeletResources | nindent 12 }}
+        readinessProbe:
+          httpGet:
+            port: 10250
+            path: /healthz
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /tmp/kubeconfig
+          subPath: kubeconfig
+        - name: containerd
+          mountPath: /run/containerd
+      - name: proxy
+        image: {{ .Values.hollow.version }}
+        command:
+        - /kubemark
+        args:
+        - --morph=proxy
+        - --name=$(NODE_NAME)
+        - --kubeconfig=/tmp/kubeconfig
+        - --logtostderr=true
+        securityContext:
+          privileged: true
+        resources:
+          {{- toYaml .Values.hollow.proxyResources | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            port: 10250
+            path: /healthz
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: kubeconfig
+          mountPath: /tmp/kubeconfig
+          subPath: kubeconfig
+      volumes:
+      - name: kubeconfig
+        secret:
+          secretName: {{ include "liqo-k3s-hollow.fullname" . }}-provider-kubeconfig
+          defaultMode: 400
+      - name: containerd
+        hostPath:
+          path: /run/containerd
+      affinity:
+        {{- toYaml .Values.hollow.affinity | nindent 8 }}

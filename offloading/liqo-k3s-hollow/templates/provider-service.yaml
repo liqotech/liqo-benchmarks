@@ -1,0 +1,20 @@
+---
+{{- $config := (merge (dict "component" "provider") .) -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "liqo-k3s-hollow.fullname" . }}-provider
+  labels:
+    {{- include "liqo-k3s-hollow.labels" $config | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "liqo-k3s-hollow.selectorLabels" $config | nindent 4 }}
+  publishNotReadyAddresses: true
+  ports:
+    - name: auth
+      protocol: TCP
+      port: 443
+      targetPort: 443

@@ -1,0 +1,170 @@
+consumer:
+  version: rancher/k3s:v1.21.3-k3s1
+
+  resources:
+    limits:
+      cpu: 8000m
+      memory: 32768Mi
+    requests:
+      cpu: 8000m
+      memory: 32768Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - worker-1
+
+
+provider:
+  version: rancher/k3s:v1.21.3-k3s1
+
+  resources:
+    limits:
+      cpu: 8000m
+      memory: 32768Mi
+    requests:
+      cpu: 8000m
+      memory: 32768Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - worker-2
+
+
+hollow:
+  version: giorio94/kubemark:v1.21.4-custom
+  kubectlImage: bitnami/kubectl:1.21
+
+  replicaCount: 100
+
+  kubeletResources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 128Mi
+
+  proxyResources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: NotIn
+            values:
+            - worker-1
+            - worker-2
+
+
+settings:
+  proxyRegistry: http://docker-registry:5000
+  memTotalGB: 32
+
+
+liqo:
+  install: false
+
+  repo: ""
+  chart: https://crownlabs.polito.it/cloud/s/y7JRSXGF2JiZwxo/download
+  version: ""
+
+  namespace: liqo
+
+  peer:
+    image: giorio94/liqo-peering-measurer:v0.3.4
+    consumer: true
+    provider: false
+
+  values: |
+    tag: "f90f7df85587d1c49d6fe12c7055faf075e08ede"
+
+    controllerManager:
+      config:
+        resourceSharingPercentage: 100
+      pod:
+        extraArgs:
+          - --v=4
+          - --kubelet-cpu-limits=8000m
+          - --kubelet-cpu-requests=25m
+          - --kubelet-ram-limits=8192M
+          - --kubelet-ram-requests=50M
+
+    networkManager:
+      config:
+        podCIDR: "10.42.0.0/16"
+        serviceCIDR: "10.43.0.0/16"
+        reservedSubnets:
+        - 192.168.0.0/16
+        - 172.16.0.0/16
+        - 10.96.0.0/12
+      pod:
+        extraArgs:
+          - --v=4
+
+    gateway:
+      service:
+        type: NodePort
+
+    auth:
+      config:
+        enableAuthentication: false
+      service:
+        type: LoadBalancer
+      pod:
+        extraArgs:
+          - --v=4
+
+    discovery:
+      config:
+        enableAdvertisement: false
+        enableDiscovery: false
+
+    crdReplicator:
+      pod:
+        extraArgs:
+          - --v=4
+
+
+admiralty:
+  install: false
+
+  repo: https://charts.admiralty.io
+  chart: multicluster-scheduler
+  namespace: admiralty
+  version: 0.14.1
+
+  certmanager:
+    repo: https://charts.jetstack.io
+    chart: cert-manager
+    namespace: cert-manager
+    version: v0.16.1
+
+
+tensile:
+  install: false
+
+  certmanager:
+    repo: https://charts.jetstack.io
+    chart: cert-manager
+    namespace: cert-manager
+    version: v1.6.1

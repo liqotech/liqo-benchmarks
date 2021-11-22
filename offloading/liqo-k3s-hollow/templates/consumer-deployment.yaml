@@ -1,0 +1,108 @@
+{{- $config := (merge (dict "component" "consumer") .) -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "liqo-k3s-hollow.fullname" . }}-consumer
+  labels:
+    {{- include "liqo-k3s-hollow.labels" $config | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "liqo-k3s-hollow.selectorLabels" $config | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "liqo-k3s-hollow.selectorLabels" $config | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: k3s-server
+        image: {{ .Values.consumer.version }}
+        command:
+        - /bin/k3s
+        args:
+        - server
+        - --tls-san=0.0.0.0
+        - --disable-network-policy
+        - --disable=traefik
+        - --disable=local-storage
+        - --datastore-endpoint=etcd
+        - --cluster-cidr=10.42.0.0/16
+        - --service-cidr=10.43.0.0/16
+        securityContext:
+          privileged: true
+        resources:
+          {{- toYaml .Values.consumer.resources | nindent 10 }}
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - /readiness-check
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+        ports:
+        - containerPort: 6443
+          name: apiserver
+          protocol: TCP
+        volumeMounts:
+        {{- if .Values.liqo.install }}
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-namespace.yaml
+          subPath: liqo-namespace.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-chart.yaml
+          subPath: liqo-chart.yaml
+        {{- if .Values.liqo.peer.consumer }}
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-peerer-service-account.yaml
+          subPath: liqo-peerer-service-account.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-peerer-cluster-role-binding.yaml
+          subPath: liqo-peerer-cluster-role-binding.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-peerer-job.yaml
+          subPath: liqo-peerer-job.yaml
+        {{- end }}
+        {{- end }}
+        {{- if or .Values.admiralty.install .Values.tensile.install }}
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/cert-manager-namespace.yaml
+          subPath: cert-manager-namespace.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/cert-manager-chart.yaml
+          subPath: cert-manager-chart.yaml
+        {{- end }}
+        {{- if .Values.admiralty.install }}
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/admiralty-namespace.yaml
+          subPath: admiralty-namespace.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/admiralty-chart.yaml
+          subPath: admiralty-chart.yaml
+        {{- end }}
+        - name: configuration
+          mountPath: /etc/rancher/k3s/registries.yaml
+          subPath: registries.yaml
+        - name: configuration
+          mountPath: /proc/meminfo
+          subPath: meminfo
+        - name: configuration
+          mountPath: /readiness-check
+          subPath: readiness-check
+        - name: database
+          mountPath: /var/lib/rancher/k3s/server/db
+      volumes:
+      - name: configuration
+        configMap:
+          name: {{ include "liqo-k3s-hollow.fullname" . }}
+          defaultMode: 400
+      - name: database
+        emptyDir:
+          medium: "Memory"
+      affinity:
+        {{- toYaml .Values.consumer.affinity | nindent 8 }}

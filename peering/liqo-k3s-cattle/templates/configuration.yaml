@@ -27,6 +27,29 @@ data:
       valuesContent: |
         {{- .Values.liqo.values | nindent 8 }}
 
+  liqo-warm-up-job.yaml: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: liqo-warm-up
+      namespace: kube-system
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: liqo-warm-up
+        spec:
+          containers:
+          - image: {{ .Values.liqo.pull.kubelet }}
+            name: virtual-kubelet
+            command:
+            - /bin/true
+          - image: {{ .Values.liqo.pull.kubeletInit }}
+            name: init-virtual-kubelet
+            command:
+            - /bin/true
+          restartPolicy: OnFailure
+
   {{- if .Values.peeringMeasurer.peer }}
   liqo-peering-measurer-namespace.yaml: |-
     apiVersion: v1
@@ -76,7 +99,7 @@ data:
             args:
             - --service-name={{ include "liqo-k3s-cattle.fullname" . }}-minion
             - --expected={{ .Values.minion.replicaCount }}
-            - --extra-wait=30s
+            - --extra-wait=1m
             - --v=2
           dnsPolicy: Default
           restartPolicy: OnFailure
@@ -87,6 +110,8 @@ data:
     apiVersion: kubelet.config.k8s.io/v1beta1
     kind: KubeletConfiguration
     maxPods: {{ .Values.settings.maxPods }}
+    kubeAPIQPS: 100
+    kubeAPIBurst: 100
 
   registries.yaml: |-
     mirrors:

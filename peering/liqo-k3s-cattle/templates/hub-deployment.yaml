@@ -57,6 +57,9 @@ spec:
         - name: configuration
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-chart.yaml
           subPath: liqo-chart.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-warm-up-job.yaml
+          subPath: liqo-warm-up-job.yaml
         {{- if .Values.peeringMeasurer.peer }}
         - name: configuration
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-peering-measurer-namespace.yaml

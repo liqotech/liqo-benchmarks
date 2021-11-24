@@ -63,8 +63,12 @@ liqo:
 
   namespace: liqo
 
+  pull:
+    kubelet: liqo/virtual-kubelet-ci:f90f7df85587d1c49d6fe12c7055faf075e08ede
+    kubeletInit: liqo/init-virtual-kubelet-ci:f90f7df85587d1c49d6fe12c7055faf075e08ede
+
   values: |
-    tag: "a06cebd6125a6d8c643cb827c24253abb9f07cd9"
+    tag: "f90f7df85587d1c49d6fe12c7055faf075e08ede"
 
     controllerManager:
       config:

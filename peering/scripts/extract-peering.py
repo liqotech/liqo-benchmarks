@@ -88,8 +88,8 @@ if __name__ == "__main__":
         avg, std, auth, neg, net, vk, no, other = compute(data)
         print(f"{n:03d}: {avg:6.3f}s ({std:.3f}s) - {auth:.3f} {neg:.3f}"
               f" {net:.3f} {vk:.3f} {no:.3f} {other:.3f}")
-        output.append(f"{n},{avg:.3f},{std:.3f},{auth*avg:.3f},{neg*avg:.3f},"
-                      f"{net*avg:.3f},{vk*avg:.3f},{no*avg:.3f},{other*avg:.3f}\n")
+        output.append(f"{n},{avg:.3f},{std:.3f},{auth:.3f},{neg:.3f},"
+                      f"{net:.3f},{vk:.3f},{no:.3f},{other:.3f}\n")
 
     with open(args.output_file, 'w') as file:
         file.writelines(output)

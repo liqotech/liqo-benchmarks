@@ -17,6 +17,8 @@ spec:
     metadata:
       labels:
         {{- include "liqo-k3s-cattle.selectorLabels" $config | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configuration.yaml") . | sha256sum }}
     spec:
       automountServiceAccountToken: false
       containers:

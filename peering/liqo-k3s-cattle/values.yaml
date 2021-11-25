@@ -46,7 +46,7 @@ minion:
 
 peeringMeasurer:
   peer: true
-  image: giorio94/liqo-peering-measurer:v0.3.4
+  image: giorio94/liqo-peering-measurer:v0.4.0
   namespace: peering-measurer
 
 
@@ -64,11 +64,11 @@ liqo:
   namespace: liqo
 
   pull:
-    kubelet: liqo/virtual-kubelet-ci:f90f7df85587d1c49d6fe12c7055faf075e08ede
-    kubeletInit: liqo/init-virtual-kubelet-ci:f90f7df85587d1c49d6fe12c7055faf075e08ede
+    kubelet: liqo/virtual-kubelet-ci:b3099f20fea4cf97925bfc2dd18a7b7f8c7ede51
+    kubeletInit: liqo/init-virtual-kubelet-ci:b3099f20fea4cf97925bfc2dd18a7b7f8c7ede51
 
   values: |
-    tag: "f90f7df85587d1c49d6fe12c7055faf075e08ede"
+    tag: "b3099f20fea4cf97925bfc2dd18a7b7f8c7ede51"
 
     controllerManager:
       config:
@@ -109,6 +109,7 @@ liqo:
 
     discovery:
       config:
+        clusterName: liqo-cluster
         enableAdvertisement: false
         enableDiscovery: false
 

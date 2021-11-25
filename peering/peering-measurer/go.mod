@@ -3,7 +3,7 @@ module github.com/liqotech/liqo-benchmarks/peering/peering-measurer
 go 1.16
 
 require (
-	github.com/liqotech/liqo v0.3.2-alpha.3.0.20211122105130-beaf6ae0219e
+	github.com/liqotech/liqo v0.3.2-alpha.3.0.20211125092917-b3099f20fea4
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.16.0

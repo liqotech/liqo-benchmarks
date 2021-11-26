@@ -45,10 +45,14 @@ minion:
 
 
 peeringMeasurer:
-  peer: true
+  enabled: true
   image: giorio94/liqo-peering-measurer:v0.4.0
   namespace: peering-measurer
 
+consumptionMeasurer:
+  enabled: true
+  image: giorio94/liqo-consumption-measurer:v0.1.1
+  namespace: consumption-measurer
 
 settings:
   proxyRegistry: http://docker-registry:5000

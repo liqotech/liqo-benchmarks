@@ -50,7 +50,7 @@ data:
             - /bin/true
           restartPolicy: OnFailure
 
-  {{- if .Values.peeringMeasurer.peer }}
+  {{- if .Values.peeringMeasurer.enabled }}
   liqo-peering-measurer-namespace.yaml: |-
     apiVersion: v1
     kind: Namespace
@@ -104,6 +104,57 @@ data:
           dnsPolicy: Default
           restartPolicy: OnFailure
           serviceAccountName: peering-measurer
+  {{- end }}
+
+  {{- if .Values.consumptionMeasurer.enabled }}
+  liqo-consumption-measurer-namespace.yaml: |-
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: {{ .Values.consumptionMeasurer.namespace }}
+
+  liqo-consumption-measurer-service-account.yaml: |-
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: consumption-measurer
+      namespace: {{ .Values.consumptionMeasurer.namespace }}
+
+  liqo-consumption-measurer-cluster-role-binding.yaml: |-
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: consumption-measurer
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: cluster-admin
+    subjects:
+    - kind: ServiceAccount
+      name: consumption-measurer
+      namespace: {{ .Values.consumptionMeasurer.namespace }}
+
+  liqo-consumption-measurer-job.yaml: |-
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: consumption-measurer
+      namespace: {{ .Values.consumptionMeasurer.namespace }}
+      labels:
+        app.kubernetes.io/name: consumption-measurer
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: consumption-measurer
+        spec:
+          containers:
+          - image: {{ .Values.consumptionMeasurer.image }}
+            imagePullPolicy: IfNotPresent
+            name: consumption-measurer
+          dnsPolicy: Default
+          restartPolicy: OnFailure
+          serviceAccountName: consumption-measurer
   {{- end }}
 
   kubelet-config.yaml: |-

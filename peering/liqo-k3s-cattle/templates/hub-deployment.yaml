@@ -62,7 +62,7 @@ spec:
         - name: configuration
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-warm-up-job.yaml
           subPath: liqo-warm-up-job.yaml
-        {{- if .Values.peeringMeasurer.peer }}
+        {{- if .Values.peeringMeasurer.enabled }}
         - name: configuration
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-peering-measurer-namespace.yaml
           subPath: liqo-peering-measurer-namespace.yaml
@@ -75,6 +75,20 @@ spec:
         - name: configuration
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-peering-measurer-job.yaml
           subPath: liqo-peering-measurer-job.yaml
+        {{- end }}
+        {{- if .Values.consumptionMeasurer.enabled }}
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-namespace.yaml
+          subPath: liqo-consumption-measurer-namespace.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-service-account.yaml
+          subPath: liqo-consumption-measurer-service-account.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-cluster-role-binding.yaml
+          subPath: liqo-consumption-measurer-cluster-role-binding.yaml
+        - name: configuration
+          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-job.yaml
+          subPath: liqo-consumption-measurer-job.yaml
         {{- end }}
         - name: configuration
           mountPath: /etc/rancher/k3s/kubelet-config.yaml

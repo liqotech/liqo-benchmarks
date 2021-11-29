@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -15,42 +14,6 @@ import (
 
 	discoveryv1alpha1 "github.com/liqotech/liqo/apis/discovery/v1alpha1"
 )
-
-func RetrieveTargetIPs(serviceName string, expected uint64) []net.IP {
-	klog.V(2).Infof("Retrieving ForeignCluster IP addresses from service %v", serviceName)
-
-	for {
-		ips, err := retrieveTargetIPs(serviceName)
-		if err != nil {
-			klog.Errorf("Failed to retrieve IP addresses: %v", err)
-		} else {
-			klog.V(2).Infof("Found %v IPs, expected: %v", len(ips), expected)
-			if len(ips) >= int(expected) {
-				return ips
-			}
-		}
-
-		klog.V(2).Info("Sleeping 10 seconds before retrying...")
-		time.Sleep(10 * time.Second)
-	}
-}
-
-func retrieveTargetIPs(serviceName string) ([]net.IP, error) {
-	ips, err := net.LookupIP(serviceName)
-	if err != nil {
-		return nil, err
-	}
-
-	// Filter out IPv6 addresses.
-	ipv4ips := make([]net.IP, 0)
-	for _, ip := range ips {
-		if ip.To4() != nil {
-			ipv4ips = append(ipv4ips, ip)
-		}
-	}
-
-	return ipv4ips, nil
-}
 
 func ForeignClusters(ctx context.Context, client dynamic.Interface, ips []net.IP) error {
 	// Create the ForeignClusters.

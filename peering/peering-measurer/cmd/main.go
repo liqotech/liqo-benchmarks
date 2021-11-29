@@ -16,6 +16,7 @@ import (
 
 	"github.com/liqotech/liqo-benchmarks/peering/peering-measurer/pkg/creation"
 	"github.com/liqotech/liqo-benchmarks/peering/peering-measurer/pkg/monitoring"
+	"github.com/liqotech/liqo-benchmarks/peering/peering-measurer/pkg/service"
 )
 
 const ChannelBufferSize = 3
@@ -43,10 +44,10 @@ func main() {
 	monitoring.Start(ctx, client, completion)
 
 	// Retrieve the target IP addresses
-	ips := creation.RetrieveTargetIPs(*serviceName, *expectedEndpoints)
+	ips := service.RetrieveTargetIPs(ctx, *serviceName, *expectedEndpoints)
 
 	klog.V(2).Infof("Waiting additional %v for the testbed to be completely ready", extraWait)
-	time.Sleep(*extraWait)
+	waitForOrExit(ctx, *extraWait)
 
 	// Create the ForeignClusters
 	monitoring.M().SetPeeringStartTimestamp(time.Now())
@@ -95,4 +96,14 @@ func prepareClient() dynamic.Interface {
 	client := dynamic.NewForConfigOrDie(config)
 	klog.V(4).Infof("Loaded dynamic client")
 	return client
+}
+
+func waitForOrExit(ctx context.Context, d time.Duration) {
+	select {
+	case <-ctx.Done():
+		klog.Info("Context canceled, exiting...")
+		os.Exit(0)
+	case <-time.After(d):
+		break
+	}
 }

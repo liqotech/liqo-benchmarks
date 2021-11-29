@@ -54,6 +54,10 @@ consumptionMeasurer:
   image: giorio94/liqo-consumption-measurer:v0.1.1
   namespace: consumption-measurer
 
+networkMeasurer:
+  enabled: false
+  image: giorio94/liqo-network-measurer:v0.0.1
+
 settings:
   proxyRegistry: http://docker-registry:5000
   memTotalGB: 32

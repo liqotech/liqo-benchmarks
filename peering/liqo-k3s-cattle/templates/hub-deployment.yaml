@@ -104,6 +104,20 @@ spec:
           subPath: readiness-check
         - name: database
           mountPath: /var/lib/rancher/k3s/server/db
+      {{- if .Values.networkMeasurer.enabled }}
+      - name: network-measurer
+        image: {{ .Values.networkMeasurer.image }}
+        args:
+        - --target-service={{ include "liqo-k3s-cattle.fullname" . }}-minion
+        - --expected={{ .Values.minion.replicaCount }}
+        - --target-port=6443
+        securityContext:
+          privileged: true
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 100Mi
+      {{- end }}
       volumes:
       - name: configuration
         configMap:

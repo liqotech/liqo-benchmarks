@@ -20,10 +20,11 @@ mkdir --parent "$OUTPUT"
 
 echo "Retrieving the hub consumption..."
 HUB=$($KUBECTL get pod -l app.kubernetes.io/component=hub --output custom-columns=':.metadata.name' --no-headers)
-HUB_KUBECTL="$KUBECTL exec $HUB -- kubectl"
+HUB_KUBECTL="$KUBECTL exec $HUB -c k3s-server -- kubectl"
 MEASURER=$($HUB_KUBECTL get pod --namespace=consumption-measurer -l app.kubernetes.io/name=consumption-measurer \
     --output custom-columns=':.metadata.name' --no-headers)
 $HUB_KUBECTL logs --namespace=consumption-measurer "$MEASURER" > "$OUTPUT/hub.csv"
+$KUBECTL logs "$HUB" -c network-measurer | grep 'liqo-network' >> "$OUTPUT/hub.csv"
 
 echo "Retrieving the minions consumption..."
 IDX=0

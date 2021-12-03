@@ -3,104 +3,69 @@ package metrics
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
-	"strconv"
 	"strings"
+	"time"
 
-	"github.com/prometheus/common/expfmt"
-	"github.com/prometheus/common/model"
-	"k8s.io/client-go/kubernetes"
+	"google.golang.org/grpc"
+	pb "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 	"k8s.io/klog/v2"
 )
 
-func RetrieveAll(ctx context.Context, client kubernetes.Interface, nodes []string) error {
-	klog.V(4).Infof("Retrieving metrics from %v nodes", len(nodes))
-	for _, node := range nodes {
-		if err := Retrieve(ctx, client, node); err != nil {
-			return err
-		}
+const endpoint = "unix:///run/containerd/containerd.sock"
+
+func NewClient(ctx context.Context) (pb.RuntimeServiceClient, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	klog.V(2).Infof("Establishing a connection to %v", endpoint)
+	conn, err := grpc.DialContext(ctx, endpoint, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		klog.Errorf("Failed to establish a connection to %v: %v", endpoint, err)
+		return nil, err
 	}
-	klog.V(4).Infof("All metrics successfully retrieved")
-	return nil
+	klog.V(2).Infof("Connection successfully established to %v", endpoint)
+
+	return pb.NewRuntimeServiceClient(conn), nil
 }
 
-func Retrieve(ctx context.Context, client kubernetes.Interface, node string) error {
-	klog.V(4).Infof("Retrieving metrics from node %v", node)
-	response, err := client.CoreV1().RESTClient().Get().Resource("nodes").
-		Name(node).SubResource("proxy", "metrics", "cadvisor").DoRaw(ctx)
+func Retrieve(ctx context.Context, client pb.RuntimeServiceClient) error {
+	klog.V(4).Infof("Retrieving stats")
+
+	request := &pb.ListContainerStatsRequest{Filter: &pb.ContainerStatsFilter{}}
+	klog.V(5).Infof("Request: %v", request)
+	response, err := client.ListContainerStats(ctx, request)
+	klog.V(5).Infof("Response: %v", response)
 	if err != nil {
-		klog.Errorf("Failed to retrieve metrics for node %v: %v", node, err)
+		klog.Errorf("Failed to retrieve stats: %v", err)
 		return err
 	}
 
-	klog.V(4).Infof("Metrics successfully retrieved from node %v", node)
-	Decode(string(response))
+	Decode(response)
 	return nil
 }
 
-func Decode(data string) {
-	decoder := expfmt.SampleDecoder{
-		Dec:  expfmt.NewDecoder(strings.NewReader(data), expfmt.FmtText),
-		Opts: &expfmt.DecodeOptions{},
-	}
+func Decode(response *pb.ListContainerStatsResponse) {
+	klog.V(4).Infof("Successfully retrieved stats for %v containers", len(response.GetStats()))
+	for _, stat := range response.GetStats() {
+		namespace := stat.Attributes.Labels["io.kubernetes.pod.namespace"]
+		pod := stat.Attributes.Labels["io.kubernetes.pod.name"]
+		container := stat.Attributes.Labels["io.kubernetes.container.name"]
+		klog.V(4).Infof("Decoding stat for container %v (namespace=%v, pod=%v, container=%v)", stat.Attributes.Id, namespace, pod, container)
 
-	for {
-		var v model.Vector
-		if err := decoder.Decode(&v); err != nil {
-			if errors.Is(err, io.EOF) {
-				// Expected loop termination condition.
-				return
-			}
-			klog.Warningf("Failed decoding entry (skipping): %v", err)
+		if !strings.HasPrefix(namespace, "liqo") || strings.HasPrefix(pod, "svclb") {
 			continue
 		}
 
-		for _, metric := range v {
-			if !strings.HasPrefix(string(metric.Metric["namespace"]), "liqo") ||
-				!(strings.HasPrefix(pod(metric), "liqo") || strings.HasPrefix(pod(metric), "virtual-kubelet")) {
-				continue
-			}
-
-			name := string(metric.Metric[model.MetricNameLabel])
-			switch name {
-			case "container_cpu_usage_seconds_total":
-				if metric.Metric["image"] != "" {
-					continue
-				}
-				fmt.Printf("%v,%v,%v,%v\n", name, pod(metric), timestamp(metric), value(metric, 6))
-
-			case "container_memory_working_set_bytes":
-				if metric.Metric["image"] != "" {
-					continue
-				}
-				fmt.Printf("%v,%v,%v,%v\n", name, pod(metric), timestamp(metric), value(metric, 0))
-
-			case "container_network_receive_bytes_total":
-				if !strings.HasPrefix(pod(metric), "virtual-kubelet") {
-					continue
-				}
-				fmt.Printf("%v,%v,%v,%v\n", name, pod(metric), timestamp(metric), value(metric, 0))
-
-			case "container_network_transmit_bytes_total":
-				if !strings.HasPrefix(pod(metric), "virtual-kubelet") {
-					continue
-				}
-				fmt.Printf("%v,%v,%v,%v\n", name, pod(metric), timestamp(metric), value(metric, 0))
-			}
+		if stat.GetCpu() == nil || stat.GetMemory() == nil {
+			klog.V(4).Infof("Skipping stat for container %v (namespace=%v, pod=%v, container=%v) as incomplete",
+				stat.Attributes.Id, namespace, pod, container)
+			continue
 		}
+
+		fmt.Printf("%v,%v,%v,%v\n", "container_cpu_usage_nanoseconds_total", pod+container,
+			stat.GetCpu().GetTimestamp(), stat.GetCpu().GetUsageCoreNanoSeconds().GetValue())
+		fmt.Printf("%v,%v,%v,%v\n", "container_memory_working_set_bytes", pod+container,
+			stat.GetMemory().GetTimestamp(), stat.GetMemory().GetWorkingSetBytes().GetValue())
 	}
-}
-
-func pod(metric *model.Sample) string {
-	return string(metric.Metric["pod"])
-}
-
-func timestamp(metric *model.Sample) string {
-	return strconv.FormatInt(metric.Timestamp.Time().Unix(), 10)
-}
-
-func value(metric *model.Sample, precision int) string {
-	return strconv.FormatFloat(float64(metric.Value), 'f', precision, 64)
 }

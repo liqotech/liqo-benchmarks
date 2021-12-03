@@ -4,15 +4,15 @@ import numpy as np
 import pandas as pd
 
 
-def process(data, start, end, converter):
+def process(data, start, end, converter, timestamp_converter):
     items = dict()
 
     for _, row in data.iterrows():
         pod = row["pod"]
         value = row["value"]
-        timestamp = row["timestamp"]
+        timestamp = timestamp_converter(row["timestamp"])
 
-        if timestamp < start - 20 or timestamp > end + 20:
+        if timestamp < start - 5 or timestamp > end + 5:
             continue
 
         try:
@@ -26,8 +26,8 @@ def process(data, start, end, converter):
             items[pod] = item
 
         if item["last_timestamp"] != timestamp:
-            fi = max(0, item["last_timestamp"] - start)
-            la = min(end - start, timestamp - start)
+            fi = max(0, item["last_timestamp"] - start + 1)
+            la = min(end - start, timestamp - start + 1)
             if fi >= la:
                 continue
 
@@ -58,17 +58,21 @@ if __name__ == "__main__":
     metric = input_hub["metric"]
 
     cpu_control, cpu_kubelet = \
-        process(input_hub[metric == "container_cpu_usage_seconds_total"],
-                args.start, args.end, lambda p, v, t: (v - p) / t)
+        process(input_hub[metric == "container_cpu_usage_nanoseconds_total"],
+                args.start, args.end, lambda p, v, t: (v - p) / t / 1e9,
+                lambda t: int(t / 1e9))
 
     memory_control, memory_kubelet = \
         process(input_hub[metric == "container_memory_working_set_bytes"],
-                args.start, args.end, lambda p, v, t: v / 1e6)
+                args.start, args.end, lambda p, v, t: v / 1e6,
+                lambda t: int(t / 1e9))
 
     receive, _ = process(input_hub[metric == "liqo_network_receive_bytes_total"],
-                         args.start, args.end, lambda p, v, t: 8 * (v - p) / t / 1e6)
+                         args.start, args.end, lambda p, v, t: 8 * (v - p) / t / 1e6,
+                         lambda x: x)
     transmit, _ = process(input_hub[metric == "liqo_network_transmit_bytes_total"],
-                          args.start, args.end, lambda p, v, t: 8 * (v - p) / t / 1e6)
+                          args.start, args.end, lambda p, v, t: 8 * (v - p) / t / 1e6,
+                          lambda x: x)
 
     cpu_minion, memory_minion = list(), list()
     for idx in range(10):
@@ -77,13 +81,15 @@ if __name__ == "__main__":
         metric = input_minion["metric"]
 
         cpu, _ = \
-            process(input_minion[metric == "container_cpu_usage_seconds_total"],
-                    args.start, args.end, lambda p, v, t: (v - p) / t)
+            process(input_minion[metric == "container_cpu_usage_nanoseconds_total"],
+                    args.start, args.end, lambda p, v, t: (v - p) / t / 1e9,
+                    lambda t: int(t / 1e9))
         cpu_minion.append(cpu)
 
         memory, _ = \
             process(input_minion[metric == "container_memory_working_set_bytes"],
-                    args.start, args.end, lambda p, v, t: v / 1e6)
+                    args.start, args.end, lambda p, v, t: v / 1e6,
+                    lambda t: int(t / 1e9))
         memory_minion.append(memory)
 
     cpu_minion = np.average(cpu_minion, axis=0)

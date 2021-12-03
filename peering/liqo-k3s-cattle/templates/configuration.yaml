@@ -113,27 +113,6 @@ data:
     metadata:
       name: {{ .Values.consumptionMeasurer.namespace }}
 
-  liqo-consumption-measurer-service-account.yaml: |-
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: consumption-measurer
-      namespace: {{ .Values.consumptionMeasurer.namespace }}
-
-  liqo-consumption-measurer-cluster-role-binding.yaml: |-
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      name: consumption-measurer
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: cluster-admin
-    subjects:
-    - kind: ServiceAccount
-      name: consumption-measurer
-      namespace: {{ .Values.consumptionMeasurer.namespace }}
-
   liqo-consumption-measurer-job.yaml: |-
     apiVersion: batch/v1
     kind: Job
@@ -152,9 +131,15 @@ data:
           - image: {{ .Values.consumptionMeasurer.image }}
             imagePullPolicy: IfNotPresent
             name: consumption-measurer
+            volumeMounts:
+            - name: containerd
+              mountPath: /run/containerd
           dnsPolicy: Default
           restartPolicy: OnFailure
-          serviceAccountName: consumption-measurer
+          volumes:
+          - name: containerd
+            hostPath:
+              path: /run/k3s/containerd
   {{- end }}
 
   kubelet-config.yaml: |-

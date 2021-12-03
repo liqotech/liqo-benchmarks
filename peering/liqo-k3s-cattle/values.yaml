@@ -50,8 +50,8 @@ peeringMeasurer:
   namespace: peering-measurer
 
 consumptionMeasurer:
-  enabled: true
-  image: giorio94/liqo-consumption-measurer:v0.1.1
+  enabled: false
+  image: giorio94/liqo-consumption-measurer:v0.3.0
   namespace: consumption-measurer
 
 networkMeasurer:

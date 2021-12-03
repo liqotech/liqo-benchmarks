@@ -81,12 +81,6 @@ spec:
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-namespace.yaml
           subPath: liqo-consumption-measurer-namespace.yaml
         - name: configuration
-          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-service-account.yaml
-          subPath: liqo-consumption-measurer-service-account.yaml
-        - name: configuration
-          mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-cluster-role-binding.yaml
-          subPath: liqo-consumption-measurer-cluster-role-binding.yaml
-        - name: configuration
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-consumption-measurer-job.yaml
           subPath: liqo-consumption-measurer-job.yaml
         {{- end }}

@@ -112,6 +112,14 @@ spec:
             cpu: 1000m
             memory: 100Mi
       {{- end }}
+      {{- if .Values.extraLatency.enabled }}
+      initContainers:
+      - name: tc-configurer
+        image: {{ .Values.extraLatency.image }}
+        args: [ "qdisc", "add", "dev", "eth0", "root", "netem", "delay", "{{ .Values.extraLatency.delay }}" ]
+        securityContext:
+          privileged: true
+      {{- end }}
       volumes:
       - name: configuration
         configMap:

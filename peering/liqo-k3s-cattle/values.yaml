@@ -63,6 +63,10 @@ settings:
   memTotalGB: 32
   maxPods: 250
 
+extraLatency:
+  enabled: false
+  image: giorio94/tc:0.1
+  delay: 100ms
 
 liqo:
   repo: ""

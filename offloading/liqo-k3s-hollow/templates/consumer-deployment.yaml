@@ -96,6 +96,14 @@ spec:
           subPath: readiness-check
         - name: database
           mountPath: /var/lib/rancher/k3s/server/db
+      {{- if .Values.liqo.extraLatency.enabled }}
+      initContainers:
+      - name: tc-configurer
+        image: {{ .Values.liqo.extraLatency.image }}
+        args: [ "qdisc", "add", "dev", "eth0", "root", "netem", "delay", "{{ .Values.liqo.extraLatency.delay }}" ]
+        securityContext:
+          privileged: true
+      {{- end }}
       volumes:
       - name: configuration
         configMap:

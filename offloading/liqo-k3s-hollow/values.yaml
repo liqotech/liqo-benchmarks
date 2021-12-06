@@ -95,6 +95,11 @@ liqo:
     consumer: true
     provider: false
 
+  extraLatency:
+    enabled: false
+    image: giorio94/tc:0.1
+    delay: 100ms
+
   values: |
     tag: "f90f7df85587d1c49d6fe12c7055faf075e08ede"
 

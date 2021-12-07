@@ -38,7 +38,7 @@ if __name__ == "__main__":
     output = pd.DataFrame()
     for pods in [10, 100, 1000, 10000]:
         data = []
-        for run in range(3):
+        for run in range(10):
             file = f"exposition-vanilla-1-{pods}-{run+1}.txt"
             start, vanilla = read(args.input_path, file)
             file = f"exposition-liqo-1-{pods}-{run+1}.txt"

@@ -17,7 +17,7 @@ EXPOSITION_MANIFEST_REMOTE=$3
 OFFLOADING_MANIFEST_REMOTE_FILE=$(basename "$EXPOSITION_MANIFEST_REMOTE")
 OUTPUT=$4
 
-RUNS=3
+RUNS=10
 DEPLOYS=1
 PODS_ARRAY=(10 100 1000 10000)
 
@@ -28,24 +28,24 @@ echo "Namespace: $NAMESPACE"
 KUBECTL="kubectl --namespace $NAMESPACE"
 CONSUMER=$($KUBECTL get pod -l app.kubernetes.io/component=consumer --output custom-columns=':.metadata.name' --no-headers)
 PROVIDER=$($KUBECTL get pod -l app.kubernetes.io/component=provider --output custom-columns=':.metadata.name' --no-headers)
-CONSUMER_EXEC="$KUBECTL exec $CONSUMER -- /bin/sh"
-PROVIDER_EXEC="$KUBECTL exec $PROVIDER -- /bin/sh"
-CONSUMER_KUBECTL="$KUBECTL exec $CONSUMER -- kubectl"
-PROVIDER_KUBECTL="$KUBECTL exec $PROVIDER -- kubectl"
+CONSUMER_EXEC="$KUBECTL exec $CONSUMER -c k3s-server -- /bin/sh"
+PROVIDER_EXEC="$KUBECTL exec $PROVIDER -c k3s-server -- /bin/sh"
+CONSUMER_KUBECTL="$KUBECTL exec $CONSUMER -c k3s-server -- kubectl"
+PROVIDER_KUBECTL="$KUBECTL exec $PROVIDER -c k3s-server -- kubectl"
 
 
 echo "Copying the measurer manifests to the provider..."
 tar cf - -C "$(dirname $OFFLOADING_MANIFEST)" "$(basename $OFFLOADING_MANIFEST)" | \
-    $KUBECTL exec "$PROVIDER" -i -- tar xf - -C "/tmp"
+    $KUBECTL exec "$PROVIDER" -c k3s-server -i -- tar xf - -C "/tmp"
 tar cf - -C "$(dirname $EXPOSITION_MANIFEST_LOCAL)" "$(basename $EXPOSITION_MANIFEST_LOCAL)" | \
-    $KUBECTL exec "$PROVIDER" -i -- tar xf - -C "/tmp"
+    $KUBECTL exec "$PROVIDER" -c k3s-server -i -- tar xf - -C "/tmp"
 $PROVIDER_EXEC -c 'cat <<EOF > /tmp/converter
 sed "s/__DEPLOYS__/\$2/" "\$1" | sed "s/__PODS__/\$3/" > "\$1-current"
 EOF'
 
 echo "Copying the measurer manifests to the consumer..."
 tar cf - -C "$(dirname $EXPOSITION_MANIFEST_REMOTE)" "$(basename $EXPOSITION_MANIFEST_REMOTE)" | \
-    $KUBECTL exec "$CONSUMER" -i -- tar xf - -C "/tmp"
+    $KUBECTL exec "$CONSUMER" -c k3s-server -i -- tar xf - -C "/tmp"
 $CONSUMER_EXEC -c 'cat <<EOF > /tmp/converter
 sed "s/__DEPLOYS__/\$2/" "\$1" | sed "s/__PODS__/\$3/" > "\$1-current"
 EOF'

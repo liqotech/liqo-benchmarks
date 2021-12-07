@@ -74,6 +74,7 @@ data:
 {{- else }}
             - --service-name={{ include "liqo-k3s-hollow.fullname" . }}-provider
 {{- end }}
+            - --extra-wait=1m
             - --v=2
           dnsPolicy: Default
           restartPolicy: OnFailure

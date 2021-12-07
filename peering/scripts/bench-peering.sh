@@ -11,7 +11,7 @@ fi
 REPO=$1
 OUTPUT=$2
 
-RUNS=3
+RUNS=10
 MINIONS_ARRAY=(1 2 4 8 16 32 64 128)
 NAMESPACE="liqo-benchmarks"
 
@@ -32,7 +32,7 @@ for RUN in $(seq 1 $RUNS); do
 
         HUB=$($KUBECTL get pod -l app.kubernetes.io/name=liqo-k3s-cattle,app.kubernetes.io/component=hub \
             --output custom-columns=':.metadata.name' --no-headers)
-        HUB_KUBECTL="$KUBECTL exec $HUB -- kubectl"
+        HUB_KUBECTL="$KUBECTL exec $HUB -c k3s-server -- kubectl"
 
         echo "Waiting for the measurer to complete..."
         while true; do

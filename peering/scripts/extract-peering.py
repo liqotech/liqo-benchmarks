@@ -81,7 +81,7 @@ if __name__ == "__main__":
     output = ["count,total,std,authentication,negotiation,network,kubelet,node,other\n"]
     for n in [1, 2, 4, 8, 16, 32, 64, 128]:
         data = []
-        for run in range(3):
+        for run in range(10):
             file = f"peering-{n:03d}-{run+1}.txt"
             data.append(read(args.input_path, file))
 

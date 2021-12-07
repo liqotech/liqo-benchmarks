@@ -13,7 +13,7 @@ MANIFEST=$2
 MANIFEST_FILE=$(basename "$MANIFEST")
 OUTPUT=$3
 
-RUNS=2
+RUNS=10
 DEPLOYS=1
 PODS_ARRAY=(10 100 1000 10000)
 if [ "$TYPE" = "admiralty" ]; then
@@ -26,11 +26,11 @@ echo "Retrieving the configuration parameters..."
 echo "Namespace: $NAMESPACE"
 KUBECTL="kubectl --namespace $NAMESPACE"
 CONSUMER=$($KUBECTL get pod -l app.kubernetes.io/component=consumer --output custom-columns=':.metadata.name' --no-headers)
-CONSUMER_EXEC="$KUBECTL exec $CONSUMER -- /bin/sh"
-CONSUMER_KUBECTL="$KUBECTL exec $CONSUMER -- kubectl"
+CONSUMER_EXEC="$KUBECTL exec $CONSUMER -c k3s-server -- /bin/sh"
+CONSUMER_KUBECTL="$KUBECTL exec $CONSUMER -c k3s-server -- kubectl"
 
 echo "Copying the measurer manifest to the consumer..."
-tar cf - -C "$(dirname $MANIFEST)" "$(basename $MANIFEST)" | $KUBECTL exec "$CONSUMER" -i -- tar xf - -C "/tmp"
+tar cf - -C "$(dirname $MANIFEST)" "$(basename $MANIFEST)" | $KUBECTL exec "$CONSUMER" -c k3s-server -i -- tar xf - -C "/tmp"
 $CONSUMER_EXEC -c 'cat <<EOF > /tmp/converter
 sed "s/__DEPLOYS__/\$2/" "\$1" | sed "s/__PODS__/\$3/" > "\$1-current"
 EOF'

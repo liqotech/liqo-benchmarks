@@ -31,7 +31,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     output = pd.DataFrame()
-    for type, max in [("vanilla", 10000), ("liqo", 10000), ("tensile", 10000), ("admiralty", 1000)]:
+    for type, max in [("vanilla", 10000), ("liqo", 10000), ("liqo-100ms", 10000), ("tensile", 10000), ("admiralty", 1000)]:
         columns = [f"count-{type}", f"avg-{type}", f"std-{type}"]
 
         inner = pd.DataFrame()
@@ -42,7 +42,7 @@ if __name__ == "__main__":
                 continue
 
             data = []
-            for run in range(3):
+            for run in range(10):
                 file = f"offloading-{type}-1-{pods}-{run+1}.txt"
                 data.append(read(args.input_path, file))
 

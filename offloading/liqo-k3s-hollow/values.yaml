@@ -91,7 +91,7 @@ liqo:
   namespace: liqo
 
   peer:
-    image: giorio94/liqo-peering-measurer:v0.3.4
+    image: giorio94/liqo-peering-measurer:v0.4.0
     consumer: true
     provider: false
 
@@ -101,7 +101,7 @@ liqo:
     delay: 100ms
 
   values: |
-    tag: "f90f7df85587d1c49d6fe12c7055faf075e08ede"
+    tag: "74133abb876f54484a16932e41de70d44f29ed32"
 
     controllerManager:
       config:
@@ -141,6 +141,7 @@ liqo:
 
     discovery:
       config:
+        clusterName: liqo-cluster
         enableAdvertisement: false
         enableDiscovery: false
 

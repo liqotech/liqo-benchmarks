@@ -101,7 +101,7 @@ liqo:
     delay: 100ms
 
   values: |
-    tag: "74133abb876f54484a16932e41de70d44f29ed32"
+    tag: "88a761d7b30d71d01691e43410890ffc3b108e8e"
 
     controllerManager:
       config:

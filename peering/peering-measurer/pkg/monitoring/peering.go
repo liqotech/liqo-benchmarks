@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +11,7 @@ import (
 	"k8s.io/klog/v2"
 
 	discoveryv1alpha1 "github.com/liqotech/liqo/apis/discovery/v1alpha1"
+	discovery "github.com/liqotech/liqo/pkg/discovery"
 )
 
 func prepareForeignClusterInformer(factory dynamicinformer.DynamicSharedInformerFactory) {
@@ -68,7 +68,12 @@ func handleSecretCreation(se *corev1.Secret) {
 	}
 
 	klog.V(5).Infof("Received creation for Secret %q", namespacedName(se))
-	id := strings.TrimPrefix(se.Namespace, "liqo-tenant-")
+	id, ok := se.GetLabels()[discovery.ClusterIDLabel]
+	if !ok {
+		klog.Warning("Secret %q misses the remote ID label", namespacedName(se))
+		return
+	}
+
 	M().ClusterID(id).SetAuthenticationIncomingEndTimestamp(se.GetCreationTimestamp().Time)
 }
 
@@ -80,6 +85,11 @@ func handleSecretUpdate(se *corev1.Secret) {
 		return
 	}
 
-	id := strings.TrimPrefix(se.Namespace, "liqo-tenant-")
+	id, ok := se.GetLabels()[discovery.ClusterIDLabel]
+	if !ok {
+		klog.Warning("Secret %q misses the remote ID label", namespacedName(se))
+		return
+	}
+
 	M().ClusterID(id).SetAuthenticationOutgoingEndTimestamp(time.Now())
 }

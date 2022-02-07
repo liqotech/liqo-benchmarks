@@ -56,7 +56,7 @@ spec:
         - name: configuration
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-namespace.yaml
           subPath: liqo-namespace.yaml
-        - name: configuration
+        - name: liqo-chart
           mountPath: /var/lib/rancher/k3s/server/manifests/liqo-chart.yaml
           subPath: liqo-chart.yaml
         - name: configuration
@@ -112,8 +112,26 @@ spec:
             cpu: 1000m
             memory: 100Mi
       {{- end }}
-      {{- if .Values.extraLatency.enabled }}
       initContainers:
+      - name: set-cluster-name
+        image: busybox:1.34.1
+        command:
+        - /bin/sh
+        args:
+        - -c
+        - POD_NAME=$(echo $POD_NAME | sed 's/^liqo-//'); sed "s/__CLUSTER_NAME__/$POD_NAME/" /tmp/input/liqo-chart.yaml > /tmp/output/liqo-chart.yaml
+        volumeMounts:
+        - name: configuration
+          mountPath: /tmp/input/liqo-chart.yaml
+          subPath: liqo-chart.yaml
+        - name: liqo-chart
+          mountPath: /tmp/output
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+      {{- if .Values.extraLatency.enabled }}
       - name: tc-configurer
         image: {{ .Values.extraLatency.image }}
         args: [ "qdisc", "add", "dev", "eth0", "root", "netem", "delay", "{{ .Values.extraLatency.delay }}" ]
@@ -128,5 +146,7 @@ spec:
       - name: database
         emptyDir:
           medium: "Memory"
+      - name: liqo-chart
+        emptyDir:
       affinity:
         {{- toYaml .Values.hub.affinity | nindent 8 }}

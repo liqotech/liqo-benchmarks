@@ -53,7 +53,7 @@ func handleNetworkConfigCreation(nc *netv1alpha1.NetworkConfig) {
 		return
 	}
 
-	id := nc.Spec.ClusterID
+	id := nc.Spec.RemoteCluster.ClusterID
 	M().ClusterID(id).SetNetworkSetupStartTimestamp(nc.GetCreationTimestamp().Time)
 }
 

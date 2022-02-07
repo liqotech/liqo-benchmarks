@@ -42,7 +42,7 @@ func main() {
 		}
 	}
 
-	// Wait for pods readiness
+	// Wait for endpoints readiness
 	klog.V(1).Info("Waiting for endpoints to become ready")
 	select {
 	case <-ctx.Done():

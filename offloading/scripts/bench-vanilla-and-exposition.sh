@@ -12,9 +12,9 @@ fi
 OFFLOADING_MANIFEST=$1
 OFFLOADING_MANIFEST_FILE=$(basename "$OFFLOADING_MANIFEST")
 EXPOSITION_MANIFEST_LOCAL=$2
-OFFLOADING_MANIFEST_LOCAL_FILE=$(basename "$EXPOSITION_MANIFEST_LOCAL")
+EXPOSITION_MANIFEST_LOCAL_FILE=$(basename "$EXPOSITION_MANIFEST_LOCAL")
 EXPOSITION_MANIFEST_REMOTE=$3
-OFFLOADING_MANIFEST_REMOTE_FILE=$(basename "$EXPOSITION_MANIFEST_REMOTE")
+EXPOSITION_MANIFEST_REMOTE_FILE=$(basename "$EXPOSITION_MANIFEST_REMOTE")
 OUTPUT=$4
 
 RUNS=10
@@ -86,13 +86,13 @@ EOF'
         sleep 5 # Should be more than enough
 
         echo "Starting the measurer on the consumer cluster..."
-        $CONSUMER_EXEC /tmp/converter "/tmp/$OFFLOADING_MANIFEST_REMOTE_FILE" "$DEPLOYS" "$PODS"
-        $CONSUMER_KUBECTL apply -f "/tmp/$OFFLOADING_MANIFEST_REMOTE_FILE-current"
+        $CONSUMER_EXEC /tmp/converter "/tmp/$EXPOSITION_MANIFEST_REMOTE_FILE" "$DEPLOYS" "$PODS"
+        $CONSUMER_KUBECTL apply -f "/tmp/$EXPOSITION_MANIFEST_REMOTE_FILE-current"
         sleep 5 # Wait some time to ensure the pod starts
 
         echo "Starting the measurer on the provider cluster..."
-        $PROVIDER_EXEC /tmp/converter "/tmp/$OFFLOADING_MANIFEST_LOCAL_FILE" "$DEPLOYS" "$PODS"
-        $PROVIDER_KUBECTL apply -f "/tmp/$OFFLOADING_MANIFEST_LOCAL_FILE-current"
+        $PROVIDER_EXEC /tmp/converter "/tmp/$EXPOSITION_MANIFEST_LOCAL_FILE" "$DEPLOYS" "$PODS"
+        $PROVIDER_KUBECTL apply -f "/tmp/$EXPOSITION_MANIFEST_LOCAL_FILE-current"
         sleep 5 # Wait some time to ensure the pod starts
 
         echo "Waiting for the measurer on the provider cluster to complete..."

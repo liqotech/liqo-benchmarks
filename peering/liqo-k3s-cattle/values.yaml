@@ -56,7 +56,7 @@ consumptionMeasurer:
 
 networkMeasurer:
   enabled: false
-  image: giorio94/liqo-network-measurer:v0.0.1
+  image: giorio94/liqo-network-measurer:v0.0.3
 
 settings:
   proxyRegistry: http://docker-registry:5000

@@ -25,6 +25,7 @@ func main() {
 	iface := flag.String("interface", "eth0", "The interface packets are captured from")
 	targetservice := flag.String("target-service", "", "The name of the service used to retrieve the source/destination ips")
 	targetport := flag.Uint("target-port", 0, "The filtering source/destination port")
+	reversed := flag.Bool("reverse", false, "Reverse host and port filters")
 	expectedEndpoints := flag.Uint64("expected", 1, "The number of remote endpoints to retrieve before starting")
 	klog.InitFlags(nil)
 	flag.Parse()
@@ -49,7 +50,7 @@ func main() {
 
 	var filters []string
 	for _, ip := range ips {
-		filters = append(filters, fmt.Sprintf("_ host %s", ip.String()))
+		filters = append(filters, fmt.Sprintf("# host %s", ip.String()))
 	}
 	filter := fmt.Sprintf("tcp _ port %d and (%s)", *targetport, strings.Join(filters, " or "))
 
@@ -65,13 +66,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	filterTransmit := strings.ReplaceAll(filter, "_", "dst")
+	hostTransmit, hostReceive := "dst", "src"
+	if *reversed {
+		hostTransmit, hostReceive = "src", "dst"
+	}
+
+	filterTransmit := strings.ReplaceAll(strings.ReplaceAll(filter, "_", "dst"), "#", hostTransmit)
 	if err := handleTransmit.SetBPFFilter(filterTransmit); err != nil {
 		klog.Errorf("Failed to configure filter %v: %v", filterTransmit, err)
 		os.Exit(1)
 	}
 
-	filterReceive := strings.ReplaceAll(filter, "_", "src")
+	filterReceive := strings.ReplaceAll(strings.ReplaceAll(filter, "_", "src"), "#", hostReceive)
 	if err := handleReceive.SetBPFFilter(filterReceive); err != nil {
 		klog.Errorf("Failed to configure filter %v: %v", filterReceive, err)
 		os.Exit(1)
@@ -79,7 +85,7 @@ func main() {
 
 	var transmit, receive uint64
 
-	klog.V(1).Infof("Capturing from %v with filters %v and %v", *iface, filterTransmit, filterReceive)
+	klog.V(1).Infof("Capturing from %q with filters %q and %q", *iface, filterTransmit, filterReceive)
 	packetSourceTransmit := gopacket.NewPacketSource(handleTransmit, handleTransmit.LinkType())
 	packetSourceReceive := gopacket.NewPacketSource(handleReceive, handleReceive.LinkType())
 

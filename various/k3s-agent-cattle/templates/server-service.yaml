@@ -1,0 +1,18 @@
+{{- $config := (merge (dict "component" "server") .) -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "k3s-agent-cattle.fullname" . }}-server
+  labels:
+    {{- include "k3s-agent-cattle.labels" $config | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "k3s-agent-cattle.selectorLabels" $config | nindent 4 }}
+  ports:
+  - name: k8s
+    protocol: TCP
+    port: 6443
+    targetPort: 6443

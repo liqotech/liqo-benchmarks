@@ -1,0 +1,25 @@
+{{- $config := (merge (dict "component" "configuration") .) -}}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "k3s-agent-cattle.fullname" . }}
+  labels:
+    {{- include "k3s-agent-cattle.labels" $config | nindent 4 }}
+data:
+  kubelet-config.yaml: |-
+    apiVersion: kubelet.config.k8s.io/v1beta1
+    kind: KubeletConfiguration
+    maxPods: {{ .Values.settings.maxPods }}
+    kubeAPIQPS: 100
+    kubeAPIBurst: 100
+
+  registries.yaml: |-
+    mirrors:
+      docker.io:
+        endpoint:
+        - {{ quote .Values.settings.proxyRegistry }}
+
+  meminfo: |-
+    MemTotal: {{ mul .Values.settings.memTotalGB 1024 1024}} kB
+    SwapTotal: 0 kB

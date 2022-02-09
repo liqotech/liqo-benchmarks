@@ -1,0 +1,94 @@
+{{- $config := (merge (dict "component" "server") .) -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "k3s-agent-cattle.fullname" . }}-server
+  labels:
+    {{- include "k3s-agent-cattle.labels" $config | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "k3s-agent-cattle.selectorLabels" $config | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "k3s-agent-cattle.selectorLabels" $config | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configuration.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: k3s-server
+        image: {{ .Values.server.image }}
+        command:
+        - /bin/k3s
+        args:
+        - server
+        - --tls-san=0.0.0.0
+        - --datastore-endpoint=etcd
+        - --disable-network-policy
+        - --disable=traefik
+        - --disable=local-storage
+        - --kubelet-arg=config=/etc/rancher/k3s/kubelet-config.yaml
+        - --cluster-cidr=10.42.0.0/20
+        - --service-cidr=10.43.0.0/20
+        env:
+        - name: K3S_TOKEN
+          value: ZfbXPgeCGAWHcGsoTftp
+        securityContext:
+          privileged: true
+        resources:
+          {{- toYaml .Values.server.resources | nindent 10 }}
+        ports:
+        - containerPort: 6443
+          name: apiserver
+          protocol: TCP
+        volumeMounts:
+        - name: configuration
+          mountPath: /etc/rancher/k3s/kubelet-config.yaml
+          subPath: kubelet-config.yaml
+        - name: configuration
+          mountPath: /etc/rancher/k3s/registries.yaml
+          subPath: registries.yaml
+        - name: configuration
+          mountPath: /proc/meminfo
+          subPath: meminfo
+        - name: database
+          mountPath: /var/lib/rancher/k3s/server/db
+      {{- if .Values.networkMeasurer.enabled }}
+      - name: network-measurer
+        image: {{ .Values.networkMeasurer.image }}
+        args:
+        - --target-service={{ include "k3s-agent-cattle.fullname" . }}-agent
+        - --expected={{ .Values.agent.replicaCount }}
+        - --target-port=6443
+        - --reverse
+        securityContext:
+          privileged: true
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 100Mi
+      {{- end }}
+      {{- if .Values.extraLatency.enabled }}
+      initContainers:
+      - name: tc-configurer
+        image: {{ .Values.extraLatency.image }}
+        args: [ "qdisc", "add", "dev", "eth0", "root", "netem", "delay", "{{ .Values.extraLatency.delay }}" ]
+        securityContext:
+          privileged: true
+      {{- end }}
+      volumes:
+      - name: configuration
+        configMap:
+          name: {{ include "k3s-agent-cattle.fullname" . }}
+          defaultMode: 400
+      - name: database
+        emptyDir:
+          medium: "Memory"
+      affinity:
+        {{- toYaml .Values.server.affinity | nindent 8 }}

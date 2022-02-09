@@ -1,0 +1,56 @@
+{{- $config := (merge (dict "component" "agent") .) -}}
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "k3s-agent-cattle.fullname" . }}-agent
+  labels:
+    {{- include "k3s-agent-cattle.labels" $config | nindent 4 }}
+spec:
+  replicas: {{ .Values.agent.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "k3s-agent-cattle.selectorLabels" $config | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "k3s-agent-cattle.selectorLabels" $config | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configuration.yaml") . | sha256sum }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: k3s-agent
+        image: {{ .Values.agent.image }}
+        command:
+        - /bin/k3s
+        args:
+        - agent
+        env:
+        - name: K3S_TOKEN
+          value: ZfbXPgeCGAWHcGsoTftp
+        - name: K3S_URL
+          value: https://{{ include "k3s-agent-cattle.fullname" . }}-server:6443
+        securityContext:
+          privileged: true
+        resources:
+          {{- toYaml .Values.agent.resources | nindent 10 }}
+        volumeMounts:
+        - name: configuration
+          mountPath: /etc/rancher/k3s/kubelet-config.yaml
+          subPath: kubelet-config.yaml
+        - name: configuration
+          mountPath: /etc/rancher/k3s/registries.yaml
+          subPath: registries.yaml
+        - name: configuration
+          mountPath: /proc/meminfo
+          subPath: meminfo
+      volumes:
+      - name: configuration
+        configMap:
+          name: {{ include "k3s-agent-cattle.fullname" . }}
+          defaultMode: 400
+      affinity:
+        {{- toYaml .Values.agent.affinity | nindent 8 }}

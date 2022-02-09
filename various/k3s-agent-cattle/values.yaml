@@ -1,0 +1,58 @@
+server:
+  image: rancher/k3s:v1.21.3-k3s1
+
+  resources:
+    limits:
+      cpu: 8000m
+      memory: 32768Mi
+    requests:
+      cpu: 8000m
+      memory: 32768Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - worker-1
+
+
+agent:
+  replicaCount: 1
+  image: rancher/k3s:v1.21.3-k3s1
+
+  resources:
+    limits:
+      cpu: 4000m
+      memory: 8192Mi
+    requests:
+      cpu: 2000m
+      memory: 4096Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: NotIn
+            values:
+            - worker-1
+
+
+networkMeasurer:
+  enabled: true
+  image: giorio94/liqo-network-measurer:v0.0.3
+
+settings:
+  proxyRegistry: http://docker-registry:5000
+  memTotalGB: 32
+  maxPods: 250
+
+extraLatency:
+  enabled: false
+  image: giorio94/tc:0.1
+  delay: 100ms

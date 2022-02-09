@@ -1,0 +1,13 @@
+{{- $config := (merge (dict "component" "agent") .) -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "k3s-agent-cattle.fullname" . }}-agent
+  labels:
+    {{- include "k3s-agent-cattle.labels" $config | nindent 4 }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "k3s-agent-cattle.selectorLabels" $config | nindent 4 }}

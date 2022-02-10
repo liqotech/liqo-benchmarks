@@ -31,7 +31,7 @@ IDX=0
 MINIONS=$($KUBECTL get pod -l app.kubernetes.io/component=minion --output custom-columns=':.metadata.name' --no-headers)
 for MINION in $MINIONS; do
     echo "Retrieving the $MINION minion consumption..."
-    MINION_KUBECTL="$KUBECTL exec $MINION -- kubectl"
+    MINION_KUBECTL="$KUBECTL exec $MINION -c k3s-server -- kubectl"
     MEASURER=$($MINION_KUBECTL get pod --namespace=consumption-measurer -l app.kubernetes.io/name=consumption-measurer \
         --output custom-columns=':.metadata.name' --no-headers)
     $MINION_KUBECTL logs --namespace=consumption-measurer "$MEASURER" > "$OUTPUT/minion-$IDX.csv"

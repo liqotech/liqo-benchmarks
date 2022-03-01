@@ -1,0 +1,96 @@
+From 45546a1cc353d12cfda9645054fe676fba087008 Mon Sep 17 00:00:00 2001
+From: Marco Iorio <marco.iorio@polito.it>
+Date: Mon, 28 Feb 2022 18:04:47 +0100
+Subject: [PATCH] hollow-kubelet: respect pod CIDR
+
+---
+ .../pkg/apis/testing/fake_runtime_service.go  | 42 ++++++++++++++++++-
+ 1 file changed, 40 insertions(+), 2 deletions(-)
+
+diff --git a/staging/src/k8s.io/cri-api/pkg/apis/testing/fake_runtime_service.go b/staging/src/k8s.io/cri-api/pkg/apis/testing/fake_runtime_service.go
+index dff770f4af5..ff0405f06a8 100644
+--- a/staging/src/k8s.io/cri-api/pkg/apis/testing/fake_runtime_service.go
++++ b/staging/src/k8s.io/cri-api/pkg/apis/testing/fake_runtime_service.go
+@@ -18,6 +18,7 @@ package testing
+ 
+ import (
+ 	"fmt"
++	"net"
+ 	"reflect"
+ 	"sync"
+ 	"time"
+@@ -36,6 +37,31 @@ var (
+ 	FakePodSandboxIPs = []string{"192.168.192.168"}
+ )
+ 
++// FakeIPGenerator is used to generate fake IP addresses
++type FakeIPGenerator struct {
++	CIDR     net.IPNet
++	Previous net.IP
++}
++
++// GetIP returns a newly generated IP.
++func (r *FakeIPGenerator) GetIP() string {
++	for i := len(r.Previous) - 1; i >= 0; i-- {
++		r.Previous[i]++
++		if r.Previous[i] != 0 {
++			break
++		}
++	}
++
++	if !r.CIDR.Contains(r.Previous) {
++		tmp := r.CIDR.IP.To4()
++		r.Previous = make(net.IP, len(tmp))
++		copy(r.Previous, tmp)
++		r.Previous[3]++
++	}
++
++	return r.Previous.String()
++}
++
+ // FakePodSandbox is the fake implementation of runtimeapi.PodSandboxStatus.
+ type FakePodSandbox struct {
+ 	// PodSandboxStatus contains the runtime information for a sandbox.
+@@ -68,6 +94,8 @@ type FakeRuntimeService struct {
+ 	Sandboxes          map[string]*FakePodSandbox
+ 	FakeContainerStats map[string]*runtimeapi.ContainerStats
+ 
++	FakeIPGenerator FakeIPGenerator
++
+ 	ErrorOnSandboxCreate bool
+ }
+ 
+@@ -215,7 +243,7 @@ func (r *FakeRuntimeService) RunPodSandbox(config *runtimeapi.PodSandboxConfig,
+ 			State:     runtimeapi.PodSandboxState_SANDBOX_READY,
+ 			CreatedAt: createdAt,
+ 			Network: &runtimeapi.PodSandboxNetworkStatus{
+-				Ip: FakePodSandboxIPs[0],
++				Ip: r.FakeIPGenerator.GetIP(),
+ 			},
+ 			// Without setting sandboxStatus's Linux.Namespaces.Options, kubeGenericRuntimeManager's podSandboxChanged will consider it as network
+ 			// namespace changed and always recreate sandbox which causes pod creation failed.
+@@ -552,10 +580,20 @@ func (r *FakeRuntimeService) Attach(req *runtimeapi.AttachRequest) (*runtimeapi.
+ }
+ 
+ // UpdateRuntimeConfig emulates the update of a runtime config for the FakeRuntimeService.
+-func (r *FakeRuntimeService) UpdateRuntimeConfig(runtimeCOnfig *runtimeapi.RuntimeConfig) error {
++func (r *FakeRuntimeService) UpdateRuntimeConfig(runtimeConfig *runtimeapi.RuntimeConfig) error {
+ 	r.Lock()
+ 	defer r.Unlock()
+ 
++	ip, net, err := net.ParseCIDR(runtimeConfig.NetworkConfig.PodCidr)
++	if err != nil {
++		return err
++	}
++
++	if !net.IP.Equal(r.FakeIPGenerator.CIDR.IP) {
++		r.FakeIPGenerator.Previous = ip.To4()
++	}
++	r.FakeIPGenerator.CIDR = *net
++
+ 	r.Called = append(r.Called, "UpdateRuntimeConfig")
+ 	return r.popError("UpdateRuntimeConfig")
+ }
+-- 
+2.30.2
+

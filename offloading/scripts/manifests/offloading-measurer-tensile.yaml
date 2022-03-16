@@ -45,7 +45,7 @@ spec:
                     values:
                       - virtual-kubelet
       containers:
-      - image: giorio94/liqo-offloading-measurer:v0.2.1
+      - image: giorio94/liqo-offloading-measurer:v0.4.0
         imagePullPolicy: IfNotPresent
         name: offloading-measurer
         args:

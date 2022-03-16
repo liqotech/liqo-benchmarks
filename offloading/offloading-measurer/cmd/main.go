@@ -9,14 +9,28 @@ import (
 	"syscall"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/liqotech/liqo-benchmarks/peering/offloading-measurer/pkg/creation"
 	"github.com/liqotech/liqo-benchmarks/peering/offloading-measurer/pkg/monitoring"
+	offloadingv1alpha1 "github.com/liqotech/liqo/apis/offloading/v1alpha1"
 )
+
+var (
+	scheme = runtime.NewScheme()
+)
+
+func init() {
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = offloadingv1alpha1.AddToScheme(scheme)
+}
 
 func main() {
 	// Configure the flags.
@@ -32,11 +46,11 @@ func main() {
 
 	// Initialize the client
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	client, metrics := prepareClients()
+	clientgo, clientctrl, metrics := prepareClients()
 
 	// Start collecting the pod metrics
 	if *metricsTarget != "" {
-		namespace, name, err := monitoring.RetrieveTargetPodName(ctx, client, *metricsTarget)
+		namespace, name, err := monitoring.RetrieveTargetPodName(ctx, clientgo, *metricsTarget)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -49,23 +63,29 @@ func main() {
 	}
 
 	// Create the namespace
-	if err := creation.Namespace(ctx, client, *namespace, *liqoEnable); err != nil {
+	if err := creation.Namespace(ctx, clientgo, *namespace); err != nil {
 		os.Exit(1)
 	}
 
-	for i := 5; i > 0; i-- {
-		klog.V(1).Infof("Waiting for namespace offloading initialization to (hopefully) complete (%v)", i)
-		time.Sleep(time.Second)
+	if *liqoEnable {
+		if err := creation.NamespaceOffloading(ctx, clientctrl, *namespace); err != nil {
+			os.Exit(1)
+		}
+
+		for i := 5; i > 0; i-- {
+			klog.V(1).Infof("Waiting for namespace offloading initialization to (hopefully) complete (%v)", i)
+			time.Sleep(time.Second)
+		}
 	}
 
 	// Configure the informers
 	expected := (*pods) * (*deployments)
 	completion := make(chan struct{})
-	monitoring.Start(ctx, client, *namespace, expected, completion)
+	monitoring.Start(ctx, clientgo, *namespace, expected, completion)
 
 	// Create the Deployments
 	monitoring.M().SetOffloadingStartTimestamp(time.Now())
-	if err := creation.Deployments(ctx, client, *namespace, *affinity, *deployments, *pods); err != nil {
+	if err := creation.Deployments(ctx, clientgo, *namespace, *affinity, *deployments, *pods); err != nil {
 		os.Exit(1)
 	}
 
@@ -89,7 +109,7 @@ func main() {
 	klog.V(1).Info("Everything completed. Bye!")
 }
 
-func prepareClients() (kubernetes.Interface, metricsv1beta1.MetricsV1beta1Interface) {
+func prepareClients() (kubernetes.Interface, client.Client, metricsv1beta1.MetricsV1beta1Interface) {
 	klog.V(4).Infof("Loading kubernetes client")
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -99,8 +119,11 @@ func prepareClients() (kubernetes.Interface, metricsv1beta1.MetricsV1beta1Interf
 
 	config.QPS = 10000
 	config.Burst = 10000
-	client := kubernetes.NewForConfigOrDie(config)
+	clientgo := kubernetes.NewForConfigOrDie(config)
+	clientctrl, err := client.New(config, client.Options{Scheme: scheme})
+	utilruntime.Must(err)
+
 	metrics := metricsv1beta1.NewForConfigOrDie(config)
 	klog.V(4).Infof("Loaded kubernetes clients")
-	return client, metrics
+	return clientgo, clientctrl, metrics
 }

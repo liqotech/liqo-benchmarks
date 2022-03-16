@@ -36,7 +36,7 @@ spec:
         app.kubernetes.io/name: exposition-syn-measurer
     spec:
       containers:
-      - image: giorio94/liqo-exposition-syn-measurer:v0.0.6
+      - image: giorio94/liqo-exposition-syn-measurer:v0.1.0
         imagePullPolicy: IfNotPresent
         name: exposition-syn-measurer
         args:

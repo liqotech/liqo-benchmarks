@@ -84,14 +84,14 @@ settings:
 liqo:
   install: false
 
-  repo: ""
-  chart: https://crownlabs.polito.it/cloud/s/y7JRSXGF2JiZwxo/download
-  version: ""
+  repo: https://helm.liqo.io/
+  chart: liqo
+  version: "v0.4.0-beta.1"
 
   namespace: liqo
 
   peer:
-    image: giorio94/liqo-peering-measurer:v0.4.2
+    image: giorio94/liqo-peering-measurer:v0.5.0
     consumer: true
     provider: false
 
@@ -101,7 +101,7 @@ liqo:
     delay: 100ms
 
   values: |
-    tag: "b697a989c8e5552b96d0f6f3475a8620cf61413b"
+    tag: ""
 
     controllerManager:
       config:
@@ -149,6 +149,9 @@ liqo:
       pod:
         extraArgs:
           - --v=4
+
+    metricAgent:
+        enable: false
 
 
 admiralty:

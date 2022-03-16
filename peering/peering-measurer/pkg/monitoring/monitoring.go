@@ -18,10 +18,8 @@ var M func() *measurer.GlobalMeasurer
 
 // Redefined here, as part of an internal Liqo package.
 const (
-	replicationLabelKey         = "liqo.io/replication"
 	replicationLabelValueLocal  = "true"
 	replicationLabelValueRemote = "false"
-	remoteIDLabel               = "liqo.io/remoteID"
 	certificateAvailableLabel   = "discovery.liqo.io/certificate-available"
 )
 

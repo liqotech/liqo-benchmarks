@@ -45,7 +45,7 @@ agent:
 
 networkMeasurer:
   enabled: true
-  image: giorio94/liqo-network-measurer:v0.0.3
+  image: giorio94/liqo-network-measurer:v0.1.0
 
 settings:
   proxyRegistry: http://docker-registry:5000

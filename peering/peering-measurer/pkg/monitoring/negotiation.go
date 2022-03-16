@@ -11,10 +11,11 @@ import (
 
 	discoveryv1alpha1 "github.com/liqotech/liqo/apis/discovery/v1alpha1"
 	sharingv1alpha1 "github.com/liqotech/liqo/apis/sharing/v1alpha1"
+	"github.com/liqotech/liqo/pkg/consts"
 )
 
 func prepareResourceRequestInformer(factory dynamicinformer.DynamicSharedInformerFactory) {
-	informer := factory.ForResource(discoveryv1alpha1.GroupVersion.WithResource("resourcerequests")).Informer()
+	informer := factory.ForResource(discoveryv1alpha1.ResourceRequestGroupVersionResource).Informer()
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(object interface{}) {
 			if unstruct, ok := object.(*unstructured.Unstructured); ok {
@@ -49,12 +50,12 @@ func handleResourceRequestCreation(rr *discoveryv1alpha1.ResourceRequest) {
 	klog.V(5).Infof("Received creation for ResourceRequest %q", namespacedName(rr))
 
 	// Discard remote ResourceRequests
-	if value, ok := rr.GetLabels()[replicationLabelKey]; !ok || value != replicationLabelValueLocal {
+	if value, ok := rr.GetLabels()[consts.ReplicationRequestedLabel]; !ok || value != replicationLabelValueLocal {
 		klog.V(5).Infof("Skipping remote ResourceRequest %q", namespacedName(rr))
 		return
 	}
 
-	id, ok := rr.GetLabels()[remoteIDLabel]
+	id, ok := rr.GetLabels()[consts.ReplicationDestinationLabel]
 	if !ok {
 		klog.Warning("ResourceRequest %q misses the remote ID label", namespacedName(rr))
 		return
@@ -66,7 +67,7 @@ func handleResourceOfferAcceptance(ro *sharingv1alpha1.ResourceOffer) {
 	klog.V(5).Infof("Received creation for ResourceOffer %q", namespacedName(ro))
 
 	// Discard local ResourceOffers
-	if value, ok := ro.GetLabels()[replicationLabelKey]; !ok || value != replicationLabelValueRemote {
+	if value, ok := ro.GetLabels()[consts.ReplicationRequestedLabel]; !ok || value != replicationLabelValueRemote {
 		klog.V(5).Infof("Skipping remote ResourceOffer %q", namespacedName(ro))
 		return
 	}

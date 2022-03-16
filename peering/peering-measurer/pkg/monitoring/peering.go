@@ -78,7 +78,7 @@ func handleSecretCreation(se *corev1.Secret) {
 }
 
 func handleSecretUpdate(se *corev1.Secret) {
-	klog.V(5).Infof("Received creation for Secret %q", namespacedName(se))
+	klog.V(5).Infof("Received update for Secret %q", namespacedName(se))
 
 	if value, ok := se.GetLabels()[certificateAvailableLabel]; !ok || value != "true" {
 		klog.V(5).Infof("Secret %q does not correspond to a valid identity", namespacedName(se))

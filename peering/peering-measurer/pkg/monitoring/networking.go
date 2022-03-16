@@ -10,6 +10,7 @@ import (
 	"k8s.io/klog/v2"
 
 	netv1alpha1 "github.com/liqotech/liqo/apis/net/v1alpha1"
+	"github.com/liqotech/liqo/pkg/consts"
 )
 
 func prepareNetworkConfigInformer(factory dynamicinformer.DynamicSharedInformerFactory) {
@@ -48,7 +49,7 @@ func handleNetworkConfigCreation(nc *netv1alpha1.NetworkConfig) {
 	klog.V(5).Infof("Received creation for NetworkConfig %q", namespacedName(nc))
 
 	// Discard remote NetworkConfig
-	if value, ok := nc.GetLabels()[replicationLabelKey]; !ok || value != replicationLabelValueLocal {
+	if value, ok := nc.GetLabels()[consts.ReplicationRequestedLabel]; !ok || value != replicationLabelValueLocal {
 		klog.V(5).Infof("Skipping remote NetworkConfig %q", namespacedName(nc))
 		return
 	}
@@ -58,7 +59,7 @@ func handleNetworkConfigCreation(nc *netv1alpha1.NetworkConfig) {
 }
 
 func handleTunnelEndpointProcessed(te *netv1alpha1.TunnelEndpoint) {
-	klog.V(5).Infof("Received creation for TunnelEndpoint %q", namespacedName(te))
+	klog.V(5).Infof("Received update for TunnelEndpoint %q", namespacedName(te))
 
 	if te.Status.Connection.Status == netv1alpha1.Connected {
 		id := te.Spec.ClusterID

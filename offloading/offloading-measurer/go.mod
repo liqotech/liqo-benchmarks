@@ -3,7 +3,7 @@ module github.com/liqotech/liqo-benchmarks/peering/offloading-measurer
 go 1.17
 
 require (
-	github.com/liqotech/liqo v0.4.0-beta.1
+	github.com/liqotech/liqo v0.4.0
 	github.com/olekukonko/tablewriter v0.0.5
 	k8s.io/api v0.23.3
 	k8s.io/apimachinery v0.23.3

@@ -71,13 +71,13 @@ extraLatency:
 liqo:
   repo: https://helm.liqo.io/
   chart: liqo
-  version: "v0.4.0-beta.1"
+  version: "v0.4.0"
 
   namespace: liqo
 
   pull:
-    kubelet: liqo/virtual-kubelet:v0.4.0-beta.1
-    kubeletInit: liqo/init-virtual-kubelet:v0.4.0-beta.1
+    kubelet: liqo/virtual-kubelet:v0.4.0
+    kubeletInit: liqo/init-virtual-kubelet:v0.4.0
 
   values: |
     tag: ""

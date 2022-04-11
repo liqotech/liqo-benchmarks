@@ -56,7 +56,7 @@ for RUN in $(seq 1 $RUNS); do
         sleep 1
         done
 
-        echo "Waiting a bit before staring the next benchmark..."
+        echo "Waiting a bit before starting the next benchmark..."
         sleep 10
     done
 done

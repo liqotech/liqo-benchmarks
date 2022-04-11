@@ -130,7 +130,7 @@ EOF'
         sleep 1
         done
         $PROVIDER_KUBECTL delete pods -A -l app.kubernetes.io/component=virtual-kubelet
-        echo "Waiting a bit before staring the next benchmark..."
+        echo "Waiting a bit before starting the next benchmark..."
         sleep 30
     done
 done

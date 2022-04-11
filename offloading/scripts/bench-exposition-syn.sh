@@ -104,6 +104,6 @@ EOF'
     if [[ "$TMP" == "No resources found" ]]; then break; fi
     sleep 1
     done
-    echo "Waiting a bit before staring the next benchmark..."
+    echo "Waiting a bit before starting the next benchmark..."
     sleep 15
 done

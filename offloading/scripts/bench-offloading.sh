@@ -70,7 +70,7 @@ for RUN in $(seq 1 $RUNS); do
         $CONSUMER_KUBECTL delete pods -A -l app.kubernetes.io/component=virtual-kubelet
         $CONSUMER_KUBECTL delete pods -A -l k8s-app=virtual-kubelet
         $CONSUMER_KUBECTL delete pods -A -l app.kubernetes.io/instance=admiralty
-        echo "Waiting a bit before staring the next benchmark..."
+        echo "Waiting a bit before starting the next benchmark..."
         sleep 30
     done
 done

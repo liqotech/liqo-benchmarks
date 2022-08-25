@@ -1,6 +1,6 @@
 module github.com/liqotech/liqo-benchmarks/consumption/network-measurer
 
-go 1.17
+go 1.18
 
 require (
 	github.com/google/gopacket v1.1.19
@@ -9,6 +9,6 @@ require (
 
 require (
 	github.com/go-logr/logr v1.2.0 // indirect
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
-	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
+	golang.org/x/net v0.0.0-20220107192237-5cfca573fb4d // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 )

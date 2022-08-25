@@ -1,6 +1,6 @@
 module github.com/liqotech/liqo-benchmarks/peering/peering-measurer
 
-go 1.17
+go 1.18
 
 require (
 	github.com/liqotech/liqo v0.4.0

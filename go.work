@@ -1,0 +1,10 @@
+go 1.18
+
+use (
+	./consumption/consumption-measurer
+	./consumption/network-measurer
+	./offloading/exposition-measurer
+	./offloading/exposition-syn-measurer
+	./offloading/offloading-measurer
+	./peering/peering-measurer
+)

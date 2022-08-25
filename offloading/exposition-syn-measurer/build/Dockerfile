@@ -1,4 +1,4 @@
-FROM golang:1.17 as builder
+FROM golang:1.18 as builder
 WORKDIR /tmp/builder
 
 RUN apt update && apt install --yes libpcap-dev

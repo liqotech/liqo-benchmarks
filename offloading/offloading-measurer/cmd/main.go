@@ -18,8 +18,8 @@ import (
 	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned/typed/metrics/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/liqotech/liqo-benchmarks/peering/offloading-measurer/pkg/creation"
-	"github.com/liqotech/liqo-benchmarks/peering/offloading-measurer/pkg/monitoring"
+	"github.com/liqotech/liqo-benchmarks/offloading/offloading-measurer/pkg/creation"
+	"github.com/liqotech/liqo-benchmarks/offloading/offloading-measurer/pkg/monitoring"
 	offloadingv1alpha1 "github.com/liqotech/liqo/apis/offloading/v1alpha1"
 )
 

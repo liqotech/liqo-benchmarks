@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 
-	"github.com/liqotech/liqo-benchmarks/peering/offloading-measurer/pkg/measurer"
+	"github.com/liqotech/liqo-benchmarks/offloading/offloading-measurer/pkg/measurer"
 )
 
 const resyncPeriod = 0

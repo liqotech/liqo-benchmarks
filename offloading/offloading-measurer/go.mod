@@ -1,4 +1,4 @@
-module github.com/liqotech/liqo-benchmarks/peering/offloading-measurer
+module github.com/liqotech/liqo-benchmarks/offloading/offloading-measurer
 
 go 1.17
 

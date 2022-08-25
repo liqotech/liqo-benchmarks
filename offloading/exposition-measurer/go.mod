@@ -1,4 +1,4 @@
-module github.com/liqotech/liqo-benchmarks/peering/exposition-measurer
+module github.com/liqotech/liqo-benchmarks/offloading/exposition-measurer
 
 go 1.17
 

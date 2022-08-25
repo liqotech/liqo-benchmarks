@@ -13,8 +13,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 
-	"github.com/liqotech/liqo-benchmarks/peering/exposition-measurer/pkg/creation"
-	"github.com/liqotech/liqo-benchmarks/peering/exposition-measurer/pkg/monitoring"
+	"github.com/liqotech/liqo-benchmarks/offloading/exposition-measurer/pkg/creation"
+	"github.com/liqotech/liqo-benchmarks/offloading/exposition-measurer/pkg/monitoring"
 )
 
 func main() {

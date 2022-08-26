@@ -8,6 +8,8 @@ This repository contains a set of tools to streamline the benchmarking of [liqo]
 
 * *Service exposition*, to evaluate the time required by liqo to replicate a service and all the associated endpointslices to a remote cluster, making them available for consumption by remote applications.
 
+* *Storage management*, to evaluate the time required by liqo to create and bind volumes associated with the virtual storage class, either in the local or in the remote cluster.
+
 * *Resource consumption*, to measure the liqo resource demands, in terms of CPU and RAM required by the liqo control plane, as well as the network traffic generated towards remote Kubernetes API servers.
 
 Further details about the testbed setup and the benchmark execution are provided in the respective sub-folders.

@@ -42,6 +42,12 @@ This complements the comparison performed with the tool mentioned above, includi
 Technically speaking, it continuously probes the target service by means of TCP SYN segments, until the corresponding acknowledgement is received, confirming the reachability of the backend.
 Sample manifests to start the measurer in the different scenarios are available in the [manifests folder](scripts/manifests).
 
+## Storage measurer
+
+[Storage measurer](storage-measurer) is a Go program responsible for creating a Kubernetes StatefulSet and measuring the time required for all pods to be created and become ready.
+Specifically, it can be leveraged on top of the liqo-k3s-hollow environment (without hollow nodes) to evaluate the time required to create a new set of PVCs and bind them from a pod, when using either standard storage classes, or the virtual one featured by Liqo.
+Sample manifests to start the measurer in the different scenarios are available in the [manifests folder](scripts/manifests).
+
 ## Scripts
 
 The [scripts](scripts) folder includes a set of scripts to:

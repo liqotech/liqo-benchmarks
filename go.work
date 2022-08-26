@@ -6,5 +6,6 @@ use (
 	./offloading/exposition-measurer
 	./offloading/exposition-syn-measurer
 	./offloading/offloading-measurer
+	./offloading/storage-measurer
 	./peering/peering-measurer
 )

@@ -40,14 +40,14 @@ tar cf - -C "$(dirname $OFFLOADING_MANIFEST)" "$(basename $OFFLOADING_MANIFEST)"
 tar cf - -C "$(dirname $EXPOSITION_MANIFEST_LOCAL)" "$(basename $EXPOSITION_MANIFEST_LOCAL)" | \
     $KUBECTL exec "$PROVIDER" -c k3s-server -i -- tar xf - -C "/tmp"
 $PROVIDER_EXEC -c 'cat <<EOF > /tmp/converter
-sed "s/__DEPLOYS__/\$2/" "\$1" | sed "s/__PODS__/\$3/" > "\$1-current"
+sed "s/__DEPLOYS__/\$2/" "\$1" | sed "s/__PODS__/\$3/" | sed "s/__ENDPOINTS__/\$(( \$2*\$3 ))/" > "\$1-current"
 EOF'
 
 echo "Copying the measurer manifests to the consumer..."
 tar cf - -C "$(dirname $EXPOSITION_MANIFEST_REMOTE)" "$(basename $EXPOSITION_MANIFEST_REMOTE)" | \
     $KUBECTL exec "$CONSUMER" -c k3s-server -i -- tar xf - -C "/tmp"
 $CONSUMER_EXEC -c 'cat <<EOF > /tmp/converter
-sed "s/__DEPLOYS__/\$2/" "\$1" | sed "s/__PODS__/\$3/" > "\$1-current"
+sed "s/__DEPLOYS__/\$2/" "\$1" | sed "s/__PODS__/\$3/" | sed "s/__ENDPOINTS__/\$(( \$2*\$3 ))/" > "\$1-current"
 EOF'
 
 mkdir --parent "$OUTPUT"

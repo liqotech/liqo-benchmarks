@@ -42,7 +42,7 @@ spec:
         args:
         - --namespace=offloading-benchmark
         - --create-service=true
-        - --endpoints=__PODS__
+        - --endpoints=__ENDPOINTS__
         - --v=2
       dnsPolicy: Default
       restartPolicy: OnFailure
